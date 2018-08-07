@@ -1,0 +1,19 @@
+2018-06-20  Brendan Graves <bgraves@mindoka.com>
+
+	* Various changes to work with Naviserver
+
+	* Updates to cast sql data to c data
+
+2003-07-23  Elizabeth Thomas <eathomas93@aol.com>
+
+	* Makefile.redbrick: Add REDBRICK def so will automatically compile with redbrick
+
+        * nsrbodbc.c: Fix type on parm for SQLError 
+
+        * tagged: nsodbc_v1_r1
+
+2001-06-20  Kriston Rehberg  <Kriston@AOL.NET>
+
+	* Various changes to support a "generic" and "redbrick"
+	installation.
+

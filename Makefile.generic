@@ -1,0 +1,51 @@
+#
+# $Header: /cvsroot/aolserver/nsodbc/Makefile.generic,v 1.1 2001/06/20 21:03:17 kriston Exp $
+#
+# nsodbc --
+#
+#      Naviserver generic ODBC database driver.
+#
+
+#
+#  naviserver's location
+#
+#  Since your module probably doesn't live inside the "naviserver"
+#  directory, you can tell make where to find naviserver.
+#
+ifndef NAVISERVER
+    NAVISERVER  = /usr/local/ns
+endif
+
+# for libodbc
+ODBC         =  /usr
+
+
+ifndef ODBC
+
+all:
+	@echo "** "
+	@echo "** ODBC variable not set."
+	@echo "** nsodbc will not be built."
+	@echo "** "
+
+install: all
+
+else
+
+
+
+#
+# Compiler flags required by your module (-I for external headers goes here)
+#
+CFLAGS   = -DBIND_EMULATION -I$(ODBC)/include -Wno-incompatible-pointer-types -Wno-unused-variable -Wno-discarded-qualifiers -Wno-deprecated-declarations -Wno-pointer-sign
+
+MODNAME    = nsodbc
+MOD      =  nsodbc.so
+MODOBJS    = nsodbc.o 
+OBJS    = nsodbc.o 
+HDRS       = nsodbc.h
+MODLIBS  +=  -L$(ODBC)/lib -lodbc -lnsdb 
+
+
+include  $(NAVISERVER)/include/Makefile.module
+endif
