@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -49,15 +49,15 @@ static const char *ODBCName(void);
 static int         ODBCServerInit(const char *server, const char *hModule, const char *driver);
 static Ns_ShutdownProc ODBCShutdown;
 static int         ODBCOpenDb(Ns_DbHandle *handle);
-static int         ODBCCloseDb(Ns_DbHandle *handle); 
+static int         ODBCCloseDb(Ns_DbHandle *handle);
 static int         ODBCGetRow(Ns_DbHandle *handle, Ns_Set *row);
 static int         ODBCCancel(Ns_DbHandle *handle);
-static int         ODBCExec(Ns_DbHandle *handle, char *sql); 
-static Ns_Set     *ODBCBindRow(Ns_DbHandle *handle); 
-static int	   ODBCFreeStmt(Ns_DbHandle *handle);
+static int         ODBCExec(Ns_DbHandle *handle, char *sql);
+static Ns_Set     *ODBCBindRow(Ns_DbHandle *handle);
+static int         ODBCFreeStmt(Ns_DbHandle *handle);
 static void        ODBCLog(RETCODE rc, Ns_DbHandle *handle);
 static const char *odbcName = "ODBC";
-static HENV        odbcenv; 
+static HENV        odbcenv;
 
 static Tcl_CmdProc ODBCCmd;
 static Tcl_CmdProc ODBCBindCmd;
@@ -71,11 +71,11 @@ static Ns_DbProc odbcProcs[] = {
     {DbFn_ServerInit, (Ns_Callback *)ODBCServerInit},
     {DbFn_OpenDb,     (Ns_Callback *)ODBCOpenDb},
     {DbFn_CloseDb,    (Ns_Callback *)ODBCCloseDb},
-    {DbFn_GetRow,     (Ns_Callback *)ODBCGetRow}, 
+    {DbFn_GetRow,     (Ns_Callback *)ODBCGetRow},
     {DbFn_Flush,      (Ns_Callback *)ODBCCancel},
     {DbFn_Cancel,     (Ns_Callback *)ODBCCancel},
-    {DbFn_Exec,       (Ns_Callback *)ODBCExec}, 
-    {DbFn_BindRow,    (Ns_Callback *)ODBCBindRow}, 
+    {DbFn_Exec,       (Ns_Callback *)ODBCExec},
+    {DbFn_BindRow,    (Ns_Callback *)ODBCBindRow},
     {0, NULL}
 };
 
@@ -187,14 +187,14 @@ DbFail(Tcl_Interp *interp, Ns_DbHandle *handle, const char *cmd, char* sql)
 
 
 
-/* 
- * utility functions for dealing with string lists 
+/*
+ * utility functions for dealing with string lists
  */
 
 static string_list_elt_t *
 string_list_elt_new(char *string)
 {
-  string_list_elt_t *elt = 
+  string_list_elt_t *elt =
     (string_list_elt_t *) ns_malloc(sizeof(string_list_elt_t));
   elt->string = string;
   elt->next = 0;
@@ -205,7 +205,7 @@ string_list_elt_new(char *string)
 
 
 
-static int 
+static int
 string_list_len (string_list_elt_t *head)
 {
   int i = 0;
@@ -215,7 +215,7 @@ string_list_len (string_list_elt_t *head)
     head = head->next;
   }
 
-  return i; 
+  return i;
 
 } /* string_list_len */
 
@@ -223,7 +223,7 @@ string_list_len (string_list_elt_t *head)
 
 /* Free the whole list and the strings in it. */
 
-static void 
+static void
 string_list_free_list (string_list_elt_t *head)
 {
   string_list_elt_t *elt;
@@ -251,8 +251,8 @@ string_list_free_list (string_list_elt_t *head)
  */
 
 static void
-parse_odbc_bind_variables(char *input, 
-                     string_list_elt_t **bind_variables, 
+parse_odbc_bind_variables(char *input,
+                     string_list_elt_t **bind_variables,
                      string_list_elt_t **fragments)
 {
   char *p, lastchar;
@@ -273,12 +273,12 @@ parse_odbc_bind_variables(char *input,
     switch (state) {
     case base:
       if (*p == '\'') {
-	state = instr;
+        state = instr;
         current_string_length = 0;
         *fp++ = *p;
       } else if ((*p == ':') && (*(p + 1) != ':') && (lastchar != ':')) {
-	bp = bindbuf;
-	state = bind;
+        bp = bindbuf;
+        state = bind;
         *fp = '\0';
         felt = string_list_elt_new(ns_strdup(fragbuf));
         if(ftail == 0) {
@@ -294,7 +294,7 @@ parse_odbc_bind_variables(char *input,
 
     case instr:
       if (*p == '\'' && (lastchar != '\'' || current_string_length == 0)) {
-	state = base;
+        state = base;
       }
       current_string_length++;
       *fp++ = *p;
@@ -306,19 +306,19 @@ parse_odbc_bind_variables(char *input,
         bp = bindbuf;
         fp = fragbuf;
       } else if (!(*p == '_' || *p == '$' || *p == '#' || isalnum((int)*p))) {
-	*bp = '\0';
-	elt = string_list_elt_new(ns_strdup(bindbuf));
-	if (tail == 0) {
-	  head = tail = elt;
-	} else {
-	  tail->next = elt;
-	  tail = elt;
-	}
-	state = base;
+        *bp = '\0';
+        elt = string_list_elt_new(ns_strdup(bindbuf));
+        if (tail == 0) {
+          head = tail = elt;
+        } else {
+          tail->next = elt;
+          tail = elt;
+        }
+        state = base;
         fp = fragbuf;
-	p--;
+        p--;
       } else {
-	*bp++ = *p;
+        *bp++ = *p;
       }
       break;
     }
@@ -343,11 +343,11 @@ parse_odbc_bind_variables(char *input,
       ftail = felt;
     }
   }
-  
+
   ns_free(fragbuf);
   ns_free(bindbuf);
   *bind_variables = head;
-  *fragments      = fhead;  
+  *fragments      = fhead;
 
   return;
 
@@ -355,10 +355,10 @@ parse_odbc_bind_variables(char *input,
 
 
 /*
- * ODBCBindCMD - This function implements the "ns_odbc_bind" Tcl command 
- * installed into each interpreter of each virtual server.  It provides 
- * for the parsing and substitution of bind variables into the original 
- * sql query.  This is an emulation only. Postgresql doesn't currently 
+ * ODBCBindCMD - This function implements the "ns_odbc_bind" Tcl command
+ * installed into each interpreter of each virtual server.  It provides
+ * for the parsing and substitution of bind variables into the original
+ * sql query.  This is an emulation only. Postgresql doesn't currently
  * support true bind variables yet.
  */
 
@@ -372,12 +372,12 @@ ODBCBindCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, const c
   Ns_DString         ds;
   Ns_DbHandle       *handle;
   Ns_Set            *rowPtr;
-  Ns_Set            *set   = NULL; 
+  Ns_Set            *set   = NULL;
   const char        *cmd;
   char              *sql;
   const char        *value = NULL, *p;
 
-  if (argc < 4 || (!STREQ("-bind", argv[3]) && (argc != 4)) || 
+  if (argc < 4 || (!STREQ("-bind", argv[3]) && (argc != 4)) ||
        (STREQ("-bind", argv[3]) && (argc != 6))) {
     return BadArgs(interp, argv, "dbId sql");
   }
@@ -395,16 +395,16 @@ ODBCBindCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, const c
    */
   if (Ns_DbDriverName(handle) != odbcName) {
     Tcl_AppendResult(interp, "handle \"", argv[1], "\" is not of type \"",
-		     odbcName, "\"", NULL);
+                     odbcName, "\"", NULL);
     return TCL_ERROR;
-			    }
+                            }
   cmd = argv[1];
 
   if (STREQ("-bind", argv[3])) {
     set = Ns_TclGetSet(interp, argv[4]);
     if (set == NULL) {
       Tcl_AppendResult (interp, "invalid set id `", argv[4], "'", NULL);
-      return TCL_ERROR;	      
+      return TCL_ERROR;
     }
     sql = ns_strdup(argv[5]);
   } else {
@@ -413,11 +413,11 @@ ODBCBindCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, const c
 
   /*
    * Parse the query string and find the bind variables.  Return
-   * the sql fragments so that the query can be rebuilt with the 
+   * the sql fragments so that the query can be rebuilt with the
    * bind variable values interpolated into the original query.
    */
 
-  parse_odbc_bind_variables(sql, &bind_variables, &sql_fragments);  
+  parse_odbc_bind_variables(sql, &bind_variables, &sql_fragments);
 
   if (string_list_len(bind_variables) > 0) {
 
@@ -428,14 +428,14 @@ ODBCBindCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, const c
      * for the bind variables.
      */
 
-    for (var_p = bind_variables, frag_p = sql_fragments; 
+    for (var_p = bind_variables, frag_p = sql_fragments;
          var_p != NULL || frag_p != NULL;) {
-    
+
       if (frag_p != NULL) {
         Ns_DStringAppend(&ds, frag_p->string);
         frag_p = frag_p->next;
       }
-   
+
       if (var_p != NULL) {
         if (set == NULL) {
           value = Tcl_GetVar(interp, var_p->string, 0);
@@ -467,12 +467,12 @@ ODBCBindCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, const c
              * This conversion is done before optimization of the query, so indices are
              * still used when appropriate.
              */
-            Ns_DStringAppend(&ds, "'");       
+            Ns_DStringAppend(&ds, "'");
 
             /*
              * DRB: Unfortunately, we need to double-quote quotes as well ... and
              * escape backslashes
-             */ 
+             */
             for (p = value; *p; p++) {
                 if (*p == '\'') {
                     if (p > value) {
@@ -482,7 +482,7 @@ ODBCBindCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, const c
                     Ns_DStringAppend(&ds, "'");
                 } else if (*p == '\\') {
                     if (p > value) {
-		        Ns_DStringNAppend(&ds, value, (int)(p-value));
+                        Ns_DStringNAppend(&ds, value, (int)(p-value));
                     }
                     value = p;
                     Ns_DStringAppend(&ds, "\\");
@@ -493,12 +493,12 @@ ODBCBindCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, const c
                 Ns_DStringAppend(&ds, value);
             }
 
-            Ns_DStringAppend(&ds, "'");       
+            Ns_DStringAppend(&ds, "'");
         }
         var_p = var_p->next;
       }
     }
-  
+
     ns_free(sql);
     sql = Ns_DStringExport(&ds);
     Ns_DStringFree(&ds);
@@ -552,8 +552,8 @@ ODBCBindCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, const c
     }
 
   } else {
-    return DbFail(interp, handle, cmd, sql);    
-  } 
+    return DbFail(interp, handle, cmd, sql);
+  }
   ns_free(sql);
 
   return TCL_OK;
@@ -679,7 +679,7 @@ ODBCOpenDb(Ns_DbHandle *handle)
         return NS_ERROR;
     }
     Ns_Log(Notice, "%s[%s]: attemping to open '%s'",
-	   handle->driver, handle->poolname, handle->datasource);
+           handle->driver, handle->poolname, handle->datasource);
     rc = SQLConnect(hdbc,
                     (SQLCHAR *)handle->datasource, SQL_NTS,
                     (SQLCHAR *)handle->user, SQL_NTS,
@@ -788,7 +788,7 @@ ODBCExec(Ns_DbHandle *handle, char *sql)
         }
     }
 
-    /* 
+    /*
      * Free the statement unless rows are waiting.
      */
 
@@ -833,7 +833,7 @@ ODBCBindRow(Ns_DbHandle *handle)
 
     if (!handle->fetchingRows) {
         Ns_Log(Error, "%s[%s]: no waiting rows",
-	       handle->driver, handle->poolname);
+               handle->driver, handle->poolname);
         return NULL;
     }
     row = handle->row;
@@ -844,13 +844,13 @@ ODBCBindRow(Ns_DbHandle *handle)
                             (SQLCHAR *)colname, sizeof(colname),
                             &cbcolname, &sqltype, &cbcoldef, &ibscale, &nullable);
         ODBCLog(rc, handle);
-	if (RC_OK(rc)) {
-	    Ns_SetPut(row, colname, NULL);
-	}
+        if (RC_OK(rc)) {
+            Ns_SetPut(row, colname, NULL);
+        }
     }
     if (!RC_OK(rc)) {
-	ODBCFreeStmt(handle);
-	row = NULL;
+        ODBCFreeStmt(handle);
+        row = NULL;
     }
     return row;
 }
@@ -875,52 +875,52 @@ ODBCBindRow(Ns_DbHandle *handle)
 static int
 ODBCGetRow(Ns_DbHandle *handle, Ns_Set *row)
 {
-    SQLRETURN         	rc1;
-    SQLRETURN 		rc2 = 0;
+    SQLRETURN           rc1;
+    SQLRETURN           rc2 = 0;
     SQLCHAR            *datum;
-    SQLUSMALLINT      	i;
-    SQLHSTMT           	hstmt;
-    SQLSMALLINT     	mdknumcols;
+    SQLUSMALLINT        i;
+    SQLHSTMT            hstmt;
+    SQLSMALLINT         mdknumcols;
     SQLLEN		cbvalue;
 
     if (!handle->fetchingRows) {
         Ns_Log(Error, "%s[%s]: no waiting rows",
-	       handle->driver, handle->poolname);
+               handle->driver, handle->poolname);
         return NS_ERROR;
     }
     hstmt = (SQLHSTMT) handle->statement;
     rc1 = SQLNumResultCols(hstmt, &mdknumcols);
-    ODBCLog(rc1, handle);    
+    ODBCLog(rc1, handle);
     datum = (SQLCHAR*)ns_malloc(4096);
     if (!RC_OK(rc1)) {
-	goto error;
+        goto error;
     }
     if (mdknumcols != (SQLSMALLINT)Ns_SetSize(row)) {
-	Ns_Log(Error, "%s[%s]: mismatched number of rows",
-	       handle->driver, handle->poolname);
-	goto error;
+        Ns_Log(Error, "%s[%s]: mismatched number of rows",
+               handle->driver, handle->poolname);
+        goto error;
     }
     rc2 = SQLFetch(hstmt);
     ODBCLog(rc2, handle);
     if (rc2 == SQL_NO_DATA_FOUND) {
-	ODBCFreeStmt(handle);
-	return NS_END_DATA;
+        ODBCFreeStmt(handle);
+        return NS_END_DATA;
     }
     for (i = 1; RC_OK(rc2) && i <= mdknumcols; i++) {
 
-	rc2 = SQLGetData(hstmt, i, SQL_C_CHAR, (SQLPOINTER)datum, 4096, &cbvalue);
-	ODBCLog(rc2, handle);
-	if (RC_OK(rc2)) {
-	    Ns_SetPutValue(row, i - 1, cbvalue == SQL_NULL_DATA ? "" : (char*)datum);
-	}
+        rc2 = SQLGetData(hstmt, i, SQL_C_CHAR, (SQLPOINTER)datum, 4096, &cbvalue);
+        ODBCLog(rc2, handle);
+        if (RC_OK(rc2)) {
+            Ns_SetPutValue(row, i - 1, cbvalue == SQL_NULL_DATA ? "" : (char*)datum);
+        }
     }
     if (!RC_OK(rc2)) {
 error:
-	ODBCFreeStmt(handle);
-	ns_free(datum);
-	return NS_ERROR;
+        ODBCFreeStmt(handle);
+        ns_free(datum);
+        return NS_ERROR;
     }
-	ns_free(datum);
+        ns_free(datum);
     return NS_OK;
 }
 
@@ -945,13 +945,13 @@ static int
 ODBCCancel(Ns_DbHandle *handle)
 {
     RETCODE         rc;
-    int		    status;
+    int             status;
 
     status = NS_OK;
     if (handle->fetchingRows) {
         rc = SQLCancel((HSTMT) handle->statement);
         ODBCLog(rc, handle);
-	status = ODBCFreeStmt(handle);
+        status = ODBCFreeStmt(handle);
     }
     return status;
 }
@@ -1069,8 +1069,8 @@ ODBCLog(RETCODE rc, Ns_DbHandle *handle)
     while (SQLError(odbcenv, hdbc, hstmt, szSQLSTATE, &nErr, msg,
             sizeof(msg), &cbmsg) == SQL_SUCCESS) {
         Ns_Log(severity, "%s[%s]: odbc message: "
-	       "SQLSTATE = %s, Native err = %d, msg = '%s'",
-	       handle->driver, handle->poolname, szSQLSTATE, nErr, msg);
+               "SQLSTATE = %s, Native err = %d, msg = '%s'",
+               handle->driver, handle->poolname, szSQLSTATE, nErr, msg);
         strcpy(handle->cExceptionCode, (const char *)szSQLSTATE);
         Ns_DStringFree(&(handle->dsExceptionMsg));
         Ns_DStringAppend(&(handle->dsExceptionMsg), (const char *)msg);
@@ -1102,7 +1102,7 @@ ODBCFreeStmt(Ns_DbHandle *handle)
     handle->statement = NULL;
     handle->fetchingRows = 0;
     if (!RC_OK(rc)) {
-	return NS_ERROR;
+        return NS_ERROR;
     }
     return NS_OK;
 }
