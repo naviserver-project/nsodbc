@@ -1,18 +1,24 @@
+ifndef NAVISERVER
+    NAVISERVER  = /usr/local/ns
+endif
+
 #
-# Stub for building a generic ODBC driver
+# Place, from where odbc library and includes can be found
 #
+ODBC=/opt/local
 
-all:	generic
+#
+# Module name
+#
+MOD      =  nsodbc.so
 
-generic:
-	$(MAKE) -f Makefile.generic
+#
+# Objects to build.
+#
+MODOBJS  = nsodbc.o
 
-install:	all
-	$(MAKE) -f Makefile.generic install
+MODLIBS  = -lnsdb -L$(ODBC)/lib -lodbc
+CPPFLAGS = -I$(NAVISERVER)/include -I$(ODBC)/include 
 
-clean:
-	$(MAKE) -f Makefile.generic clean
-
-clobber:
-	$(MAKE) -f Makefile.generic clobber
+include  $(NAVISERVER)/include/Makefile.module
 
