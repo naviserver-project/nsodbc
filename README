@@ -10,8 +10,8 @@ Installation:
 
 After installing NaviServer and an ODBC driver, do
 
-   make
-   make install
+    make
+    make install
 
 in the source directory of the nsodbc. If NaviServer
 is installed at an unusual place, provide
