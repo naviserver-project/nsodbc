@@ -1,0 +1,23 @@
+
+nsodbc -- ODBC Database Driver for NaviServer
+
+This is an internal database driver that connects to ODBC databases for Win32
+or Unix systems. Unix users need need to obtain the client drivers
+from the database vendor or by using e.g. unixODBC (http://www.unixodbc.org/)
+
+
+Installation:
+
+After installing NaviServer and an ODBC driver, do
+
+   make
+   make install
+
+in the source directory of the nsodbc. If NaviServer
+is installed at an unusual place, provide
+
+    NAVISERVER=/path-to-your-ns-installation
+
+int the make commands above.
+
+
