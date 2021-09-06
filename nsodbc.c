@@ -34,6 +34,21 @@
 #define DONT_TD_VOID 1
 
 #ifndef REDBRICK
+/*
+ * By setting "SIZEOF_LONG_INT" we avoid that unixodbc_conf.h is loaded by
+ * sql.h, since this redefines PACKAGE_STRING, PACKAGE_TARNAME and
+ * PACKAGE_VERSION.
+ */
+# if LONG_MAX == 32767
+#  define SIZEOF_LONG_INT 2
+# elif LONG_MAX == 2147483647
+#  define SIZEOF_LONG_INT 4
+# elif LONG_MAX == 9223372036854775807
+#  define SIZEOF_LONG_INT 8
+# else
+#  error "What weird system is this?"
+# endif
+
 #include <sql.h>
 #include <sqlext.h>
 #else
@@ -45,15 +60,17 @@
 #define MAX_ERROR_MSG 500
 #define MAX_IDENTIFIER 256
 
-static const char *ODBCName(void);
-static int         ODBCServerInit(const char *server, const char *hModule, const char *driver);
+NS_EXPORT NsDb_DriverInitProc Ns_DbDriverInit;
+
+static const char *    ODBCName(void);
+static Ns_ReturnCode   ODBCServerInit(const char *server, const char *hModule, const char *driver);
 static Ns_ShutdownProc ODBCShutdown;
-static int         ODBCOpenDb(Ns_DbHandle *handle);
-static int         ODBCCloseDb(Ns_DbHandle *handle);
-static int         ODBCGetRow(Ns_DbHandle *handle, Ns_Set *row);
-static int         ODBCCancel(Ns_DbHandle *handle);
-static int         ODBCExec(Ns_DbHandle *handle, char *sql);
-static Ns_Set     *ODBCBindRow(Ns_DbHandle *handle);
+static Ns_ReturnCode   ODBCOpenDb(Ns_DbHandle *handle);
+static Ns_ReturnCode   ODBCCloseDb(Ns_DbHandle *handle);
+static int             ODBCGetRow(Ns_DbHandle *handle, Ns_Set *row);
+static Ns_ReturnCode   ODBCCancel(Ns_DbHandle *handle);
+static int             ODBCExec(Ns_DbHandle *handle, const char *sql);
+static Ns_Set *        ODBCBindRow(Ns_DbHandle *handle);
 static int         ODBCFreeStmt(Ns_DbHandle *handle);
 static void        ODBCLog(RETCODE rc, Ns_DbHandle *handle);
 static const char *odbcName = "ODBC";
@@ -67,15 +84,15 @@ NS_EXPORT NsDb_DriverInitProc Ns_DbDriverInit;
 
 
 static Ns_DbProc odbcProcs[] = {
-    {DbFn_Name,       (Ns_Callback *)ODBCName},
-    {DbFn_ServerInit, (Ns_Callback *)ODBCServerInit},
-    {DbFn_OpenDb,     (Ns_Callback *)ODBCOpenDb},
-    {DbFn_CloseDb,    (Ns_Callback *)ODBCCloseDb},
-    {DbFn_GetRow,     (Ns_Callback *)ODBCGetRow},
-    {DbFn_Flush,      (Ns_Callback *)ODBCCancel},
-    {DbFn_Cancel,     (Ns_Callback *)ODBCCancel},
-    {DbFn_Exec,       (Ns_Callback *)ODBCExec},
-    {DbFn_BindRow,    (Ns_Callback *)ODBCBindRow},
+    {DbFn_Name,       (ns_funcptr_t)ODBCName},
+    {DbFn_ServerInit, (ns_funcptr_t)ODBCServerInit},
+    {DbFn_OpenDb,     (ns_funcptr_t)ODBCOpenDb},
+    {DbFn_CloseDb,    (ns_funcptr_t)ODBCCloseDb},
+    {DbFn_GetRow,     (ns_funcptr_t)ODBCGetRow},
+    {DbFn_Flush,      (ns_funcptr_t)ODBCCancel},
+    {DbFn_Cancel,     (ns_funcptr_t)ODBCCancel},
+    {DbFn_Exec,       (ns_funcptr_t)ODBCExec},
+    {DbFn_BindRow,    (ns_funcptr_t)ODBCBindRow},
     {0, NULL}
 };
 
@@ -609,11 +626,19 @@ ODBCServerInit(const char *server, const char *UNUSED(module), const char *UNUSE
 static void
 ODBCShutdown(const Ns_Time *UNUSED(timeoutPtr), void *arg)
 {
-    HENV henv = arg;
-    RETCODE         rc;
+    HENV           henv = arg;
+    RETCODE        rc;
+    Ns_LogSeverity severity;
 
     rc = SQLFreeEnv(henv);
-    /*return RC_OK(rc) ? NS_OK : NS_ERROR;*/
+    if (rc == SQL_SUCCESS_WITH_INFO) {
+        severity = Warning;
+    } else if (rc == SQL_ERROR) {
+        severity = Error;
+    } else {
+        return;
+    }
+    Ns_Log(severity, "odbc shutdown retorts problem");
 }
 
 
@@ -712,7 +737,7 @@ ODBCOpenDb(Ns_DbHandle *handle)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 ODBCCloseDb(Ns_DbHandle *handle)
 {
     RETCODE         rc;
@@ -751,11 +776,11 @@ ODBCCloseDb(Ns_DbHandle *handle)
  */
 
 static int
-ODBCExec(Ns_DbHandle *handle, char *sql)
+ODBCExec(Ns_DbHandle *handle, const char *sql)
 {
     HSTMT           hstmt;
     RETCODE         rc;
-    int             status;
+    int             status = NS_OK;
     short           numcols;
 
     /*
@@ -818,7 +843,7 @@ ODBCExec(Ns_DbHandle *handle, char *sql)
  *----------------------------------------------------------------------
  */
 
-static Ns_Set  *
+static Ns_Set *
 ODBCBindRow(Ns_DbHandle *handle)
 {
     HSTMT           hstmt;
@@ -941,7 +966,7 @@ error:
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 ODBCCancel(Ns_DbHandle *handle)
 {
     RETCODE         rc;
@@ -1066,8 +1091,8 @@ ODBCLog(RETCODE rc, Ns_DbHandle *handle)
     }
     hdbc = (SQLHDBC) handle->connection;
     hstmt = (SQLHSTMT) handle->statement;
-    while (SQLError(odbcenv, hdbc, hstmt, szSQLSTATE, &nErr, msg,
-            sizeof(msg), &cbmsg) == SQL_SUCCESS) {
+    while (SQLError(odbcenv, hdbc, hstmt, szSQLSTATE, &nErr, msg, sizeof(msg), &cbmsg)
+           == SQL_SUCCESS) {
         Ns_Log(severity, "%s[%s]: odbc message: "
                "SQLSTATE = %s, Native err = %d, msg = '%s'",
                handle->driver, handle->poolname, szSQLSTATE, nErr, msg);
