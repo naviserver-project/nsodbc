@@ -56,7 +56,6 @@ Date:   2018-08-07
 
     Initial commit of nsodb database driver for Naviserver
 
-A	ChangeLog
 A	Makefile
 A	Makefile.generic
 A	README-nsodbc.txt
