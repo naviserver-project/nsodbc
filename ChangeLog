@@ -1,19 +1,66 @@
-2018-06-20  Brendan Graves <bgraves@mindoka.com>
+commit eaca0ff66e8b9b025a12e3294651f07e57c9a204
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-09-06
 
-	* Various changes to work with Naviserver
+    adjust code to more modern prototypes
 
-	* Updates to cast sql data to c data
+M	nsodbc.c
 
-2003-07-23  Elizabeth Thomas <eathomas93@aol.com>
+commit 2dcdb54197a6085b9e348ed5c85fd9f50f97504a
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-08-30
 
-	* Makefile.redbrick: Add REDBRICK def so will automatically compile with redbrick
+    use smae number of spaces before command snippets
 
-        * nsrbodbc.c: Fix type on parm for SQLError 
+M	README
 
-        * tagged: nsodbc_v1_r1
+commit b3530ac0b7c7d16aa18eae5f87f75be776e369a4
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-08-30
 
-2001-06-20  Kriston Rehberg  <Kriston@AOL.NET>
+    provide a minimal README file
 
-	* Various changes to support a "generic" and "redbrick"
-	installation.
+A	README
+D	README-nsodbc.txt
+D	nsodbc.html
 
+commit c69bb88d471d6e108c1cb7bc14c1d582386faa92
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-08-11
+
+    remove obsolte file
+
+D	Makefile.generic
+
+commit 43a3f3673d46479c5153d55558c92223c5b4804e
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-08-11
+
+    whitespace cleanup
+
+M	nsodbc.c
+
+commit d616d9c351060aecb250d0a73900f1af8c8417ae
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-08-11
+
+    update Makefile to current conventions
+    let module compile without warnings (tested with unixODBC)
+
+M	Makefile
+M	nsodbc.c
+
+commit 7faecfc8b3fad787541ea3cc54e6ff9657ee41a5
+Author: baccagraves <bgraves@mindoka.com>
+Date:   2018-08-07
+
+    Initial commit of nsodb database driver for Naviserver
+
+A	ChangeLog
+A	Makefile
+A	Makefile.generic
+A	README-nsodbc.txt
+A	nsodbc.c
+A	nsodbc.h
+A	nsodbc.html
+A	sample-config.tcl
